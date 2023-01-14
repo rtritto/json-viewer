@@ -1,7 +1,8 @@
 import { InputBase } from '@mui/material'
+import { useAtomValue } from 'jotai'
 import React, { useCallback } from 'react'
 
-import { useJsonViewerStore } from '../../stores/JsonViewerStore'
+import { colorspaceAtom, displayDataTypesAtom } from '../../state'
 import type { Colorspace } from '../../theme/base16'
 import type { DataItemProps, DataType, EditorProps } from '../../type'
 import { DataTypeLabel } from '../DataTypeLabel'
@@ -19,9 +20,8 @@ export function createEasyType<Value> (
   const displayTypeLabel = config.displayTypeLabel ?? true
   const Render = React.memo(renderValue)
   const EasyType: React.FC<DataItemProps<Value>> = (props) => {
-    const storeDisplayDataTypes = useJsonViewerStore(store => store.displayDataTypes)
-    const color = useJsonViewerStore(
-      store => store.colorspace[config.colorKey])
+    const storeDisplayDataTypes = useAtomValue(displayDataTypesAtom)
+    const color = useAtomValue(colorspaceAtom)[config.colorKey]
     return (
       <DataBox
         sx={{
@@ -43,8 +43,7 @@ export function createEasyType<Value> (
   }
   const fromString = config.fromString
   const EasyTypeEditor: React.FC<EditorProps<Value>> = ({ value, setValue }) => {
-    const color = useJsonViewerStore(
-      store => store.colorspace[config.colorKey])
+    const color = useAtomValue(colorspaceAtom)[config.colorKey]
     return (
       <InputBase
         value={value}

@@ -1,24 +1,36 @@
-import {
-  createTheme, Paper,
-  ThemeProvider
-} from '@mui/material'
+import { createTheme, Paper, ThemeProvider } from '@mui/material'
+import type { Atom } from 'jotai'
+import { useAtom, useSetAtom } from 'jotai'
+import { useAtomCallback } from 'jotai/utils'
 import type React from 'react'
 import { useCallback, useEffect, useMemo, useRef } from 'react'
 
 import { DataKeyPair } from './components/DataKeyPair'
 import { useThemeDetector } from './hooks/useThemeDetector'
 import {
-  createJsonViewerStore,
-  JsonViewerProvider,
-  useJsonViewerStore,
-  useJsonViewerStoreApi
-} from './stores/JsonViewerStore'
+  colorspaceAtom,
+  displayDataTypesAtom,
+  displayObjectSizeAtom,
+  editableAtom,
+  enableClipboardAtom,
+  groupArraysAfterLengthAtom,
+  indentWidthAtom,
+  keyRendererAtom,
+  maxDisplayLengthAtom,
+  onChangeAtom,
+  onCopyAtom,
+  registryTypesAtomFamily,
+  rootNameAtom,
+  setHoverAtomFamily,
+  valueAtom
+} from './state'
 import {
-  createTypeRegistryStore, predefined,
-  TypeRegistryProvider, useTypeRegistryStore
-} from './stores/typeRegistry'
+  createJsonViewerStore,
+  JsonViewerProvider
+} from './stores/JsonViewerStore'
+import { predefined } from './stores/typeRegistry'
 import { darkColorspace, lightColorspace } from './theme/base16'
-import type { JsonViewerProps } from './type'
+import type { JsonViewerProps, JsonViewerState } from './type'
 import { applyValue, createDataType, isCycleReference } from './utils'
 
 export { applyValue, createDataType, isCycleReference }
@@ -26,61 +38,52 @@ export { applyValue, createDataType, isCycleReference }
 /**
  * @internal
  */
-function useSetIfNotUndefinedEffect<Key extends keyof JsonViewerProps> (
-  key: Key,
-  value: JsonViewerProps[Key] | undefined
+function useSetIfNotUndefinedEffect (
+  atom: Atom<JsonViewerState[keyof JsonViewerState]>,
+  value: JsonViewerProps[keyof JsonViewerProps] | undefined
 ) {
-  const api = useJsonViewerStoreApi()
+  const setAtom = useSetAtom(atom)
   useEffect(() => {
     if (value !== undefined) {
-      api.setState({
-        [key]: value
-      })
+      setAtom(value)
     }
-  }, [key, value, api])
+  }, [value, setAtom])
 }
 
 /**
  * @internal
  */
 const JsonViewerInner: React.FC<JsonViewerProps> = (props) => {
-  const api = useJsonViewerStoreApi()
-  useSetIfNotUndefinedEffect('value', props.value)
-  useSetIfNotUndefinedEffect('editable', props.editable)
-  useSetIfNotUndefinedEffect('indentWidth', props.indentWidth)
-  useSetIfNotUndefinedEffect('onChange', props.onChange)
-  useSetIfNotUndefinedEffect('groupArraysAfterLength', props.groupArraysAfterLength)
-  useSetIfNotUndefinedEffect('keyRenderer', props.keyRenderer)
-  useSetIfNotUndefinedEffect('maxDisplayLength', props.maxDisplayLength)
-  useSetIfNotUndefinedEffect('enableClipboard', props.enableClipboard)
-  useSetIfNotUndefinedEffect('rootName', props.rootName)
-  useSetIfNotUndefinedEffect('displayDataTypes', props.displayDataTypes)
-  useSetIfNotUndefinedEffect('displayObjectSize', props.displayObjectSize)
-  useSetIfNotUndefinedEffect('onCopy', props.onCopy)
+  const setColorspace = useSetAtom(colorspaceAtom)
+  useSetIfNotUndefinedEffect(valueAtom, props.value)
+  useSetIfNotUndefinedEffect(editableAtom, props.editable)
+  useSetIfNotUndefinedEffect(indentWidthAtom, props.indentWidth)
+  useSetIfNotUndefinedEffect(onChangeAtom, props.onChange)
+  useSetIfNotUndefinedEffect(groupArraysAfterLengthAtom, props.groupArraysAfterLength)
+  useSetIfNotUndefinedEffect(keyRendererAtom, props.keyRenderer)
+  useSetIfNotUndefinedEffect(maxDisplayLengthAtom, props.maxDisplayLength)
+  useSetIfNotUndefinedEffect(enableClipboardAtom, props.enableClipboard)
+  useSetIfNotUndefinedEffect(rootNameAtom, props.rootName)
+  useSetIfNotUndefinedEffect(displayDataTypesAtom, props.displayDataTypes)
+  useSetIfNotUndefinedEffect(displayObjectSizeAtom, props.displayObjectSize)
+  useSetIfNotUndefinedEffect(onCopyAtom, props.onCopy)
   useEffect(() => {
     if (props.theme === 'light') {
-      api.setState({
-        colorspace: lightColorspace
-      })
+      setColorspace(lightColorspace)
     } else if (props.theme === 'dark') {
-      api.setState({
-        colorspace: darkColorspace
-      })
+      setColorspace(darkColorspace)
     } else if (typeof props.theme === 'object') {
-      api.setState({
-        colorspace: props.theme
-      })
+      setColorspace(props.theme)
     }
-  }, [api, props.theme])
+  }, [props.theme])
   const onceRef = useRef(true)
   const predefinedTypes = useMemo(() => predefined(), [])
-  const registerTypes = useTypeRegistryStore(store => store.registerTypes)
   if (onceRef.current) {
     const allTypes = [...predefinedTypes]
     props.valueTypes?.forEach(type => {
       allTypes.push(type)
     })
-    registerTypes(allTypes)
+    useSetAtom(registryTypesAtomFamily(allTypes))
     onceRef.current = false
   }
   useEffect(() => {
@@ -88,11 +91,16 @@ const JsonViewerInner: React.FC<JsonViewerProps> = (props) => {
     props.valueTypes?.forEach(type => {
       allTypes.push(type)
     })
-    registerTypes(allTypes)
-  }, [predefinedTypes, props.valueTypes, registerTypes])
+    useSetAtom(registryTypesAtomFamily(allTypes))
+  }, [predefinedTypes, props.valueTypes])
 
-  const value = useJsonViewerStore(store => store.value)
-  const setHover = useJsonViewerStore(store => store.setHover)
+  const value = useAtom(valueAtom)
+  const setHover = useAtomCallback(
+    useCallback((get, set, arg) => {
+      // eslint-disable-next-line react-hooks/rules-of-hooks
+      useSetAtom(setHoverAtomFamily(arg))
+    }, [])
+  )
   return (
     <Paper
       elevation={0}
@@ -103,11 +111,7 @@ const JsonViewerInner: React.FC<JsonViewerProps> = (props) => {
         userSelect: 'none',
         contentVisibility: 'auto'
       }}
-      onMouseLeave={
-        useCallback(() => {
-          setHover(null)
-        }, [setHover])
-      }
+      onMouseLeave={() => setHover(null)}
     >
       <DataKeyPair
         value={value}
@@ -149,15 +153,11 @@ export const JsonViewer = function JsonViewer<Value> (props: JsonViewerProps<Val
   const mixedProps = { ...props, theme: themeType }
   return (
     <ThemeProvider theme={theme}>
-      <TypeRegistryProvider createStore={createTypeRegistryStore}>
-        <JsonViewerProvider createStore={() => {
-          // This function only runs once, so we don't need a memo for this.
-          //  Refs: https://github.com/pmndrs/zustand/blob/77d14b17bc33a6f10f072802fac56aa78510710e/src/context.ts#L36-L38
-          return createJsonViewerStore(props)
-        }}>
+      {/* <TypeRegistryProvider initialValues={createTypeRegistryStore()}> merged with JsonViewerProvider because registryAtom isn't set */}
+        <JsonViewerProvider initialValues={createJsonViewerStore(props)}>
           <JsonViewerInner {...mixedProps}/>
         </JsonViewerProvider>
-      </TypeRegistryProvider>
+      {/* </TypeRegistryProvider> */}
     </ThemeProvider>
   )
 }

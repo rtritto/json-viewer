@@ -1,8 +1,6 @@
 import { Box } from '@mui/material'
-import React, { memo, SetStateAction, useMemo, useState } from 'react'
-import create from 'zustand'
-import createStore from 'zustand/context'
-import { combine } from 'zustand/middleware'
+import { Atom, useAtomValue } from 'jotai'
+import React, { memo, useMemo, useState } from 'react'
 
 import { createEasyType } from '../components/DataTypes/createEasyType'
 import {
@@ -15,40 +13,18 @@ import {
   PostObjectType,
   PreObjectType
 } from '../components/DataTypes/Object'
-import type { DataItemProps, DataType, Path } from '../type'
-import { useJsonViewerStore } from './JsonViewerStore'
+import {
+  collapseStringsAfterLengthAtom,
+  colorspaceAtom,
+  registryAtom
+} from '../state'
+import type { DataItemProps, DataType, Path, TypeRegistryState } from '../type'
 
-type TypeRegistryState = {
-  registry: DataType<any>[]
-}
+export { Provider as TypeRegistryProvider } from 'jotai'
 
-type TypeRegistryActions = {
-  registerTypes: (setState: SetStateAction<DataType<any>[]>) => void
-}
-
-export const createTypeRegistryStore = () => create(
-  combine<TypeRegistryState, TypeRegistryActions>(
-    {
-      registry: []
-    },
-    (set) => ({
-      registerTypes: (setState) => {
-        set(state => ({
-          registry:
-            typeof setState === 'function'
-              ? setState(state.registry)
-              : setState
-        }))
-      }
-    })
-  )
-)
-
-export const {
-  Provider: TypeRegistryProvider,
-  useStore: useTypeRegistryStore,
-  useStoreApi: useTypeRegistryStoreApi
-} = createStore<ReturnType<typeof createTypeRegistryStore>>()
+export const createTypeRegistryStore = (): Iterable<readonly [Atom<TypeRegistryState[keyof TypeRegistryState]>, TypeRegistryState[keyof TypeRegistryState]]> => [
+  [registryAtom, []] // moved to createJsonViewerStore (JsonViewerProvider)
+]
 
 const objectType: DataType<object> = {
   is: (value) => typeof value === 'object',
@@ -58,7 +34,10 @@ const objectType: DataType<object> = {
 }
 
 export function matchTypeComponents<Value> (
-  value: Value, path: Path, registry: TypeRegistryState['registry']): DataType<Value> {
+  value: Value,
+  path: Path,
+  registry: TypeRegistryState['registry']
+): DataType<Value> {
   let potential: DataType<Value> | undefined
   for (const T of registry) {
     if (T.is(value, path)) {
@@ -79,7 +58,7 @@ export function matchTypeComponents<Value> (
 }
 
 export function useTypeComponents (value: unknown, path: Path) {
-  const registry = useTypeRegistryStore(store => store.registry)
+  const registry = useAtomValue(registryAtom)
   return useMemo(() => matchTypeComponents(value, path, registry), [value, path, registry])
 }
 
@@ -151,8 +130,7 @@ export function predefined (): DataType<any>[] {
       ...createEasyType(
         'null',
         () => {
-          const backgroundColor = useJsonViewerStore(
-            store => store.colorspace.base02)
+          const { base02: backgroundColor } = useAtomValue(colorspaceAtom)
           return (
             <Box sx={{
               fontSize: '0.8rem',
@@ -176,8 +154,7 @@ export function predefined (): DataType<any>[] {
       ...createEasyType(
         'undefined',
         () => {
-          const backgroundColor = useJsonViewerStore(
-            store => store.colorspace.base02)
+          const { base02: backgroundColor } = useAtomValue(colorspaceAtom)
           return (
             <Box sx={{
               fontSize: '0.7rem',
@@ -204,7 +181,7 @@ export function predefined (): DataType<any>[] {
         'string',
         (props) => {
           const [showRest, setShowRest] = useState(false)
-          const collapseStringsAfterLength = useJsonViewerStore(store => store.collapseStringsAfterLength)
+          const collapseStringsAfterLength = useAtomValue(collapseStringsAfterLengthAtom)
           const value = showRest
             ? props.value
             : props.value.slice(0, collapseStringsAfterLength)
@@ -254,8 +231,7 @@ export function predefined (): DataType<any>[] {
       ...createEasyType(
         'NaN',
         () => {
-          const backgroundColor = useJsonViewerStore(
-            store => store.colorspace.base02)
+          const { base02: backgroundColor } = useAtomValue(colorspaceAtom)
           return (
             <Box sx={{
               backgroundColor,

@@ -12,7 +12,8 @@ export type Path = (string | number)[]
  */
 export type JsonViewerOnChange = <U = unknown>(
   path: Path, oldValue: U,
-  newValue: U /*, type: ChangeType */) => void
+  newValue: U /*, type: ChangeType */
+) => void
 
 /**
  *  @param path path to the target value
@@ -44,6 +45,10 @@ export type DataType<ValueType = unknown> = {
   Editor?: React.ComponentType<EditorProps<ValueType>>
   PreComponent?: React.ComponentType<DataItemProps<ValueType>>
   PostComponent?: React.ComponentType<DataItemProps<ValueType>>
+}
+
+export type TypeRegistryState = {
+  registry: DataType<any>[]
 }
 
 export interface JsonViewerKeyRenderer extends React.FC<DataItemProps> {
@@ -157,4 +162,26 @@ export type JsonViewerProps<T = unknown> = {
    * @default true
    */
   displayObjectSize?: boolean
+}
+
+export type JsonViewerState<T = unknown> = {
+  inspectCache: Record<string, boolean>
+  hoverPath: { path: Path; nestedIndex?: number } | null
+  indentWidth: number
+  groupArraysAfterLength: number
+  enableClipboard: boolean
+  maxDisplayLength: number
+  defaultInspectDepth: number
+  collapseStringsAfterLength: number
+  objectSortKeys: boolean | ((a: string, b: string) => number)
+  quotesOnKeys: boolean
+  colorspace: Colorspace
+  editable: boolean | (<U>(path: Path, currentValue: U) => boolean)
+  displayDataTypes: boolean
+  rootName: false | string
+  value: T
+  onChange: JsonViewerOnChange
+  onCopy: JsonViewerOnCopy | undefined
+  keyRenderer: JsonViewerKeyRenderer
+  displayObjectSize: boolean
 }
