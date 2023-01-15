@@ -1,7 +1,6 @@
 import { createTheme, Paper, ThemeProvider } from '@mui/material'
 import type { Atom } from 'jotai'
 import { useAtom, useSetAtom } from 'jotai'
-import { useAtomCallback } from 'jotai/utils'
 import type React from 'react'
 import { useCallback, useEffect, useMemo, useRef } from 'react'
 
@@ -19,9 +18,9 @@ import {
   maxDisplayLengthAtom,
   onChangeAtom,
   onCopyAtom,
-  registryTypesAtomFamily,
+  registryTypesAtom,
   rootNameAtom,
-  setHoverAtomFamily,
+  setHoverAtom,
   valueAtom
 } from './state'
 import {
@@ -75,15 +74,16 @@ const JsonViewerInner: React.FC<JsonViewerProps> = (props) => {
     } else if (typeof props.theme === 'object') {
       setColorspace(props.theme)
     }
-  }, [props.theme])
+  }, [props.theme, setColorspace])
   const onceRef = useRef(true)
   const predefinedTypes = useMemo(() => predefined(), [])
+  const registerTypes = useSetAtom(registryTypesAtom)
   if (onceRef.current) {
     const allTypes = [...predefinedTypes]
     props.valueTypes?.forEach(type => {
       allTypes.push(type)
     })
-    useSetAtom(registryTypesAtomFamily(allTypes))
+    registerTypes(allTypes)
     onceRef.current = false
   }
   useEffect(() => {
@@ -91,16 +91,11 @@ const JsonViewerInner: React.FC<JsonViewerProps> = (props) => {
     props.valueTypes?.forEach(type => {
       allTypes.push(type)
     })
-    useSetAtom(registryTypesAtomFamily(allTypes))
-  }, [predefinedTypes, props.valueTypes])
+    registerTypes(allTypes)
+  }, [predefinedTypes, props.valueTypes, registerTypes])
 
   const value = useAtom(valueAtom)
-  const setHover = useAtomCallback(
-    useCallback((get, set, arg) => {
-      // eslint-disable-next-line react-hooks/rules-of-hooks
-      useSetAtom(setHoverAtomFamily(arg))
-    }, [])
-  )
+  const setHover = useSetAtom(setHoverAtom)
   return (
     <Paper
       elevation={0}
@@ -111,7 +106,11 @@ const JsonViewerInner: React.FC<JsonViewerProps> = (props) => {
         userSelect: 'none',
         contentVisibility: 'auto'
       }}
-      onMouseLeave={() => setHover(null)}
+      onMouseLeave={
+        useCallback(() => {
+          setHover(null)
+        }, [setHover])
+      }
     >
       <DataKeyPair
         value={value}

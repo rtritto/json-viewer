@@ -1,6 +1,5 @@
 import { Box, styled } from '@mui/material'
 import { useAtomValue, useSetAtom } from 'jotai'
-import { useAtomCallback } from 'jotai/utils'
 import type React from 'react'
 import { useCallback, useMemo, useState } from 'react'
 
@@ -15,7 +14,7 @@ import {
   onChangeAtom,
   quotesOnKeysAtom,
   rootNameAtom,
-  setHoverAtomFamily,
+  setHoverAtom,
   valueAtom
 } from '../state'
 import { useTypeComponents } from '../stores/typeRegistry'
@@ -69,12 +68,7 @@ export const DataKeyPair: React.FC<DataKeyPairProps> = (props) => {
       (value, index) => value === hoverPath.path[index] && nestedIndex ===
         hoverPath.nestedIndex)
   }, [hoverPath, path, nestedIndex])
-  const setHover = useAtomCallback(
-    useCallback((get, set, arg) => {
-      // eslint-disable-next-line react-hooks/rules-of-hooks
-      useSetAtom(setHoverAtomFamily(arg))
-    }, [])
-  )
+  const setHover = useSetAtom(setHoverAtom)
   const root = useAtomValue(valueAtom)
   const [inspect, setInspect] = useInspect(path, value, nestedIndex)
   const [editing, setEditing] = useState(false)
@@ -206,7 +200,10 @@ export const DataKeyPair: React.FC<DataKeyPairProps> = (props) => {
   return (
     <Box className='data-key-pair'
          data-testid={'data-key-pair' + path.join('.')}
-         onMouseEnter={() => setHover({ path, nestedIndex })}
+         onMouseEnter={
+          useCallback(() => setHover({ path, nestedIndex }),
+            [setHover, path, nestedIndex])
+        }
     >
       <DataBox
         component='span'
