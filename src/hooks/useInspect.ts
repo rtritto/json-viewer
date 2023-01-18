@@ -18,7 +18,14 @@ export function useInspect (path: (string | number)[], value: any, nestedIndex?:
   const depth = path.length
   const isTrap = useIsCycleReference(path, value)
   const defaultInspectDepth = useAtomValue(defaultInspectDepthAtom)
-  const getInspectCache = useSetAtom(getInspectCacheAtom)
+  const getInspectCache = useAtomValue(getInspectCacheAtom)
+  // const inspectCache = useAtomValue(inspectCacheAtom)
+  // const getInspectCache = useCallback((path: Path, nestedIndex?: number) => {
+  //   const target = nestedIndex === undefined
+  //     ? path.join('.')
+  //     : `${path.join('.')}[${nestedIndex}]nt`
+  //   return inspectCache[target]
+  // }, [path, nestedIndex])
   const setInspectCache = useSetAtom(setInspectCacheAtom)
   useEffect(() => {
     const inspect = getInspectCache({ path, nestedIndex })
@@ -34,7 +41,7 @@ export function useInspect (path: (string | number)[], value: any, nestedIndex?:
         : depth < defaultInspectDepth
       setInspectCache({ path, inspect })
     }
-  }, [defaultInspectDepth, depth, isTrap, nestedIndex, path, getInspectCache, setInspectCache])
+  }, [defaultInspectDepth, depth, isTrap, nestedIndex, path, setInspectCache])
   const [inspect, set] = useState<boolean>(() => {
     const shouldInspect = getInspectCache({ path, nestedIndex })
     if (shouldInspect !== undefined) {

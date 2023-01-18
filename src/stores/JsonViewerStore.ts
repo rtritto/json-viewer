@@ -27,6 +27,7 @@ export { Provider as JsonViewerProvider } from 'jotai'
 const DefaultKeyRenderer: JsonViewerKeyRenderer = () => null
 DefaultKeyRenderer.when = () => false
 
+/* TODO remove */
 export type JsonViewerActions = {
   getInspectCache: (path: Path, nestedIndex?: number) => boolean
   setInspectCache: (
@@ -34,27 +35,48 @@ export type JsonViewerActions = {
   setHover: (path: Path | null, nestedIndex?: number) => void
 }
 
-export const createJsonViewerStore = <T = unknown> (props: JsonViewerProps<T>): Iterable<readonly [Atom<JsonViewerState[keyof JsonViewerState]>, JsonViewerState[keyof JsonViewerState]]> => [
+export const createJsonViewerStore = <T = unknown> ({
+  collapseStringsAfterLength,
+  defaultInspectDepth,
+  displayDataTypes,
+  displayObjectSize,
+  editable,
+  enableClipboard,
+  groupArraysAfterLength,
+  indentWidth,
+  keyRenderer,
+  maxDisplayLength,
+  objectSortKeys,
+  onChange,
+  onCopy,
+  quotesOnKeys,
+  rootName,
+  value
+}: JsonViewerProps<T>): Array<[Atom<JsonViewerState[keyof JsonViewerState]>, JsonViewerState[keyof JsonViewerState]]> => {
+  const store = [[valueAtom, value]]
   // provided by user
-  [enableClipboardAtom, props.enableClipboard ?? true],
-  [indentWidthAtom, props.indentWidth ?? 3],
-  [groupArraysAfterLengthAtom, props.groupArraysAfterLength ?? 100],
-  [collapseStringsAfterLengthAtom,
-    (props.collapseStringsAfterLength === false)
-      ? Number.MAX_VALUE
-      : props.collapseStringsAfterLength ?? 50],
-  [maxDisplayLengthAtom, props.maxDisplayLength ?? 30],
-  [rootNameAtom, props.rootName ?? 'root'],
-  [onChangeAtom, props.onChange ?? (() => {})],
-  [onCopyAtom, props.onCopy ?? undefined],
-  [keyRendererAtom, props.keyRenderer ?? DefaultKeyRenderer],
-  [editableAtom, props.editable ?? false],
-  [defaultInspectDepthAtom, props.defaultInspectDepth ?? 5],
-  [objectSortKeysAtom, props.objectSortKeys ?? false],
-  [quotesOnKeysAtom, props.quotesOnKeys ?? true],
-  [displayDataTypesAtom, props.displayDataTypes ?? true],
-  // internal state
-  [valueAtom, props.value],
-  [displayObjectSizeAtom, props.displayObjectSize ?? true]
-]
+  if (collapseStringsAfterLength !== undefined) {
+    store.push([collapseStringsAfterLengthAtom,
+      (collapseStringsAfterLength === false)
+        ? Number.MAX_VALUE
+        : collapseStringsAfterLength
+    ])
+  }
+  if (defaultInspectDepth !== undefined) store.push([defaultInspectDepthAtom, defaultInspectDepth])
+  if (displayDataTypes !== undefined) store.push([displayDataTypesAtom, displayDataTypes])
+  if (displayObjectSize !== undefined) store.push([displayObjectSizeAtom, displayObjectSize])
+  if (editable !== undefined) store.push([editableAtom, editable])
+  if (enableClipboard !== undefined) store.push([enableClipboardAtom, enableClipboard])
+  if (groupArraysAfterLength !== undefined) store.push([groupArraysAfterLengthAtom, groupArraysAfterLength])
+  if (indentWidth !== undefined) store.push([indentWidthAtom, indentWidth])
+  if (keyRenderer !== undefined) store.push([keyRendererAtom, keyRenderer])
+  if (maxDisplayLength !== undefined) store.push([maxDisplayLengthAtom, maxDisplayLength])
+  if (objectSortKeys !== undefined) store.push([objectSortKeysAtom, objectSortKeys])
+  if (onChange !== undefined) store.push([onChangeAtom, onChange])
+  if (onCopy !== undefined) store.push([onCopyAtom, onCopy])
+  if (rootName !== undefined) store.push([rootNameAtom, rootName])
+  if (quotesOnKeys !== undefined) store.push([quotesOnKeysAtom, quotesOnKeys])
+  if (rootName !== undefined) store.push([rootNameAtom, rootName])
+  return store
+}
 export type JsonViewerStore = ReturnType<typeof createJsonViewerStore>
