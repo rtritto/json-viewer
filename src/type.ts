@@ -164,9 +164,14 @@ export type JsonViewerProps<T = unknown> = {
   displayObjectSize?: boolean
 }
 
+export type HoverPath = {
+  path: Path
+  nestedIndex?: number
+}
+
 export type JsonViewerState<T = unknown> = {
   inspectCache: Record<string, boolean>
-  hoverPath: { path: Path; nestedIndex?: number } | null
+  hoverPath: HoverPath | null
   indentWidth: number
   groupArraysAfterLength: number
   enableClipboard: boolean

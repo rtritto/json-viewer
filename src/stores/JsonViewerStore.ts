@@ -27,6 +27,7 @@ export { Provider as JsonViewerProvider } from 'jotai'
 const DefaultKeyRenderer: JsonViewerKeyRenderer = () => null
 DefaultKeyRenderer.when = () => false
 
+/* TODO remove */
 export type JsonViewerActions = {
   getInspectCache: (path: Path, nestedIndex?: number) => boolean
   setInspectCache: (

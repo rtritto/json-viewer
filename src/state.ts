@@ -1,7 +1,9 @@
+import deepEqual from 'fast-deep-equal'
 import { atom } from 'jotai'
+import { atomFamily, atomWithDefault } from 'jotai/utils'
 
 import { lightColorspace } from './theme/base16'
-import type { JsonViewerState, TypeRegistryState } from './type'
+import type { HoverPath, JsonViewerState, TypeRegistryState } from './type'
 
 export const valueAtom = atom<JsonViewerState['value'] | undefined>(undefined)
 export const editableAtom = atom<JsonViewerState['editable'] | undefined>(undefined)
@@ -20,19 +22,29 @@ export const collapseStringsAfterLengthAtom = atom<JsonViewerState['collapseStri
 export const defaultInspectDepthAtom = atom<JsonViewerState['defaultInspectDepth'] | undefined>(undefined)
 export const objectSortKeysAtom = atom<JsonViewerState['objectSortKeys'] | undefined>(undefined)
 export const quotesOnKeysAtom = atom<JsonViewerState['quotesOnKeys'] | undefined>(undefined)
-export const inspectCacheAtom = atom<JsonViewerState['inspectCache'] | undefined>({})
+export const inspectCacheAtom = atom<JsonViewerState['inspectCache']>({})
 export const hoverPathAtom = atom<JsonViewerState['hoverPath'] | null>(null)
 export const registryAtom = atom<TypeRegistryState['registry']>([])
 
-export const getInspectCacheAtom = atom(
-  (get) => get(inspectCacheAtom),
-  (get, _set, { path, nestedIndex }) => {
+/* TODO add type to atom */
+export const getInspectCacheAtom = atomFamily(({ path, nestedIndex }: HoverPath) => atomWithDefault(
+  (get) => {
     const target = nestedIndex === undefined
       ? path.join('.')
       : `${path.join('.')}[${nestedIndex}]nt`
     return get(inspectCacheAtom)[target]
   }
-)
+), deepEqual)
+// export const getInspectCacheAtom = atom(({ path, nestedIndex }: HoverPath) => atom<boolean>(
+// 	(get) => {
+// 		const target = nestedIndex === undefined
+//       ? path.join('.')
+//       : `${path.join('.')}[${nestedIndex}]nt`
+//     return get(inspectCacheAtom)[target]
+// 	}
+// ), deepEqual)
+
+
 export const setInspectCacheAtom = atom(
   (get) => get(inspectCacheAtom),
   (get, set, { path, action, nestedIndex }) => {

@@ -1,14 +1,17 @@
 {
   "compilerOptions": {
     "target": "ESNext",
-    "outDir": "./dist/out/",
-    "rootDir": "./src/",
+    "module": "ESNext",
+    "lib": ["DOM", "DOM.Iterable", "ESNext"],
+    "moduleResolution": "NodeNext",
+    "outDir": "dist",
     "jsx": "react-jsx",
     "jsxImportSource": "@emotion/react",
-    "incremental": false,
+    "isolatedModules": true,
+    "esModuleInterop": true,
     "declaration": true,
-    "moduleResolution": "node", 
-    "allowSyntheticDefaultImports": true
+    "sourceMap": true,
+    "strict": true
   },
   "include": [
     "src/**/*.ts"
